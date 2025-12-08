@@ -1,6 +1,6 @@
 import sys
 import time
-import psutil
+import resource
 
 DELTA = 30
 
@@ -12,10 +12,11 @@ ALPHA = {
 }
 
 def process_memory():
-    process = psutil.Process()
-    memory_info = process.memory_info()
-    memory_consumed = int(memory_info.rss / 1024)
-    return memory_consumed
+    """Get memory usage in KB using resource module (no external dependencies)."""
+    usage = resource.getrusage(resource.RUSAGE_SELF)
+    if sys.platform == 'darwin':  # macos returns bytes
+        return usage.ru_maxrss / 1024
+    return usage.ru_maxrss  # linux returns KB
 
 def time_wrapper(call_algorithm):
     start_time = time.time()
