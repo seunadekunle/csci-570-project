@@ -1,6 +1,6 @@
 import sys
 import time
-import resource
+import psutil # external library referenced in assignment document
 
 DELTA = 30
 
@@ -10,16 +10,29 @@ ALPHA = {
     'G': {'A': 48, 'C': 118, 'G': 0, 'T': 110},
     'T': {'A': 94, 'C': 48, 'G': 110, 'T': 0}
 }
-
+ 
 def process_memory():
-    """Get memory usage in KB using resource module (no external dependencies)."""
-    # ru_maxrss is in bytes on Linux, KB on macOS
-    usage = resource.getrusage(resource.RUSAGE_SELF)
-    if sys.platform == 'darwin':  # macOS returns bytes
-        return usage.ru_maxrss / 1024
-    return usage.ru_maxrss  # Linux returns KB
+    """
+    Uses the psutil library to measure the memory usage of the current process.
+
+    Returns:
+        int: Memory usage in MB
+    """
+    process = psutil.Process()
+    memory_info = process.memory_info()
+    memory_consumed = int(memory_info.rss / 1024)
+    return memory_consumed
 
 def time_wrapper(call_algorithm):
+    """
+    Measures the execution time of a callable function
+
+    Args:
+        call_algorithm (callable): Executed function
+
+    Returns:
+        tuple: (time_taken, result)
+    """
     start_time = time.time()
     result = call_algorithm()
     end_time = time.time()
@@ -27,12 +40,31 @@ def time_wrapper(call_algorithm):
     return time_taken, result
 
 def generate_string(base_string, indices):
+    """
+    Generate a DNA string using iterative self-insertion
+
+    Args:
+        base_string (str): Initial DNA sequence.
+        indices (list[int]): Positions used for expansion
+
+    Returns:
+        str: Fully expanded DNA sequence
+    """
     current_string = base_string
     for idx in indices:
         current_string = current_string[:idx+1] + current_string + current_string[idx+1:]
     return current_string
 
 def parse_input(input_file):
+    """
+    Parse the custom DNA input file and generate two expanded sequence
+
+    Args:
+        input_file (str): Path to input file
+
+    Returns:
+        tuple: (expanded_string_s, expanded_string_t)
+    """
     with open(input_file, 'r') as f:
         lines = [line.strip() for line in f.readlines() if line.strip()]
     
@@ -56,10 +88,16 @@ def parse_input(input_file):
 
 def space_efficient_alignment_cost(x, y):
     """
-    Space-efficient DP to compute alignment costs. Only keeps two rows at a time: O(min(m,n)) space instead of O(mn).
-    Uses the same recurrence as basic DP but with space optimization.
+    Dynamic programming to compute alignment cost using a space-efficient approach
     
-    Returns an array where result[j] = cost of aligning x with y[0:j]
+    O (min(m, n)) space instead of O(mn)
+
+    Args:
+        x (int): First input sequence
+        y (int): Second input sequence
+
+    Returns:
+        list[int]: Array result where result[j] is the cost of aligning x[:j] and y[:j]
     """
     m, n = len(x), len(y)
     
@@ -80,15 +118,16 @@ def space_efficient_alignment_cost(x, y):
 
 def find_optimal_split(x, y):
     """
-    Find the optimal split point using space-efficient DP.
-    Divide step: Split X in half, find optimal split point in Y.
-    
-    Forward pass: Compute costs for X^L (left part) with 
-    substrings of Y ending with y_j.
-    Backward pass: Compute costs for X^R (right part) with 
-    substrings of Y starting from y_i.
-    
-    Returns the index in y where we should split.
+    Find optimal split index in y for Hirschberg's divide step
+
+    Uses forward and backward space-efficient Dynamic Programming to minimize total alignment cost
+
+    Args:
+        x (str): First input sequence
+        y (str): Second input sequence
+
+    Returns:
+        int: Index j where y should be split
     """
     m, n = len(x), len(y)
     mid = m // 2  
@@ -115,13 +154,16 @@ def find_optimal_split(x, y):
 
 def efficient_alignment(x, y):
     """
-    Memory-efficient alignment using divide-and-conquer 
-    High-level solution based on divide and conquer 
-    
-    Complexity: Time O(mn), Space O(min(m,n))
-    Total operations = cmn + ½cmn + ¼cmn + ... = 2cmn = Θ(mn) 
-    
-    Returns: (cost, aligned_x, aligned_y)
+    Memory-efficient global sequence alignment using divide-and-conquer
+
+    Implements Hirschberg’s algorithm with O(min(m,n)) space and O(mn) time.
+
+    Args:
+        x (str): First input sequence
+        y (str): Second input sequence
+
+    Returns:
+        tuple: (cost, aligned_x, aligned_y)
     """
     m, n = len(x), len(y)
     
@@ -142,7 +184,18 @@ def efficient_alignment(x, y):
     return cost1 + cost2, x1 + x2, y1 + y2
 
 def basic_alignment_small(x, y):
-   
+    """
+    Standard dynamic programming alignment used as recursion base case
+
+    Runs full O(mn) DP and backtracking for small inputs.
+
+    Args:
+        x (str): First input sequence
+        y (str): Second input sequence
+
+    Returns:
+        tuple: (cost, aligned_x, aligned_y)
+    """
     m, n = len(x), len(y)
     
     if m == 0:
@@ -203,6 +256,13 @@ def basic_alignment_small(x, y):
     return cost, ''.join(aligned_x), ''.join(aligned_y)
 
 def main():
+    """
+    Program entry point
+    
+    Loads input file, calls alignment algorithm, and writes output to file
+
+    Exits if required arguments are missing
+    """
     if len(sys.argv) != 3:
         sys.exit(1)
     
@@ -210,17 +270,13 @@ def main():
     output_file = sys.argv[2]
     
     x, y = parse_input(input_file)
-    
-    memory_before = process_memory()
-    
+
     def call_algorithm():
         return efficient_alignment(x, y)
     
     time_taken, (cost, aligned_x, aligned_y) = time_wrapper(call_algorithm)
     
-    memory_after = process_memory()
-    
-    memory_used = float(memory_after - memory_before)
+    memory_used = process_memory()
     
     with open(output_file, 'w') as f:
         f.write(f"{cost}\n")
@@ -231,4 +287,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
