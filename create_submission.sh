@@ -6,17 +6,17 @@
 echo "=== CSCI 570 Submission ZIP Creator ==="
 echo ""
 
-# Prompt for USC IDs
+# prompt for USC IDs
 echo "Enter USC IDs separated by spaces (e.g., 1234567891 1234567892 1234567893):"
 read -r ids_input
 
-# Validate input
+# validate input
 if [ -z "$ids_input" ]; then
     echo "Error: No USC IDs provided."
     exit 1
 fi
 
-# Convert space-separated IDs to underscore-separated
+# convert space-separated IDs to underscore-separated
 ids_array=($ids_input)
 folder_name=$(IFS=_; echo "${ids_array[*]}")
 zip_name="${folder_name}.zip"
@@ -27,7 +27,7 @@ echo "  Folder: $folder_name"
 echo "  ZIP:    $zip_name"
 echo ""
 
-# Check required files exist
+# check required files exist
 required_files=("basic.py" "efficient.py" "basic.sh" "efficient.sh")
 missing_files=()
 
@@ -37,7 +37,7 @@ for file in "${required_files[@]}"; do
     fi
 done
 
-# Check for Summary.pdf
+# check for Summary.pdf
 if [ ! -f "Summary.pdf" ]; then
     echo "Warning: Summary.pdf not found. Please add it before final submission."
 fi
@@ -50,19 +50,19 @@ if [ ${#missing_files[@]} -gt 0 ]; then
     exit 1
 fi
 
-# Clean up any existing submission folder/zip
+# clean up any existing submission folder/zip
 rm -rf "$folder_name" "$zip_name" 2>/dev/null
 
-# Create folder structure
+# create folder structure
 mkdir -p "$folder_name"
 
-# Copy required files
+# copy required files
 cp basic.py "$folder_name/"
 cp efficient.py "$folder_name/"
 cp basic.sh "$folder_name/"
 cp efficient.sh "$folder_name/"
 
-# Copy Summary.pdf if it exists
+# copy Summary.pdf if it exists
 if [ -f "Summary.pdf" ]; then
     cp Summary.pdf "$folder_name/"
     echo "✓ Summary.pdf included"
@@ -70,10 +70,10 @@ else
     echo "⚠ Summary.pdf not included (file not found)"
 fi
 
-# Create the zip file
+# create the zip file
 zip -r "$zip_name" "$folder_name"
 
-# Clean up the temporary folder
+# clean up the temporary folder
 rm -rf "$folder_name"
 
 echo ""
