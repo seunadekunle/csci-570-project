@@ -16,7 +16,7 @@ def process_memory():
     Uses the psutil library to measure the memory usage of the current process.
 
     Returns:
-        int: Memory usage in MB
+        int: Memory usage in KB
     """
     process = psutil.Process()
     memory_info = process.memory_info()
@@ -25,7 +25,7 @@ def process_memory():
 
 def time_wrapper(call_algorithm):
     """
-    Measurses the execution time of a callable function
+    Measures the execution time of a callable function
 
     Args:
         call_algorithm (callable): Executed function
@@ -168,7 +168,7 @@ def main():
     
     Loads input file, calls alignment algorithm, and writes output to file
 
-    Exists if required arguments are missing
+    Exits if required arguments are missing
     """
     if len(sys.argv) != 3:
         sys.exit(1)
@@ -198,4 +198,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
