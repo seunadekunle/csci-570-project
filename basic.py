@@ -1,6 +1,6 @@
 import sys
 import time
-import resource
+import psutil # external library referenced in assignment document
 
 DELTA = 30
 
@@ -12,13 +12,27 @@ ALPHA = {
 }
 
 def process_memory():
-    """Get memory usage in KB using resource module (no external dependencies)."""
-    usage = resource.getrusage(resource.RUSAGE_SELF)
-    if sys.platform == 'darwin':  # macos returns bytes
-        return usage.ru_maxrss / 1024
-    return usage.ru_maxrss  # linux returns KB
+    """
+    Uses the psutil library to measure the memory usage of the current process.
+
+    Returns:
+        int: Memory usage in MB
+    """
+    process = psutil.Process()
+    memory_info = process.memory_info()
+    memory_consumed = int(memory_info.rss / 1024)
+    return memory_consumed
 
 def time_wrapper(call_algorithm):
+    """
+    Measurses the execution time of a callable function
+
+    Args:
+        call_algorithm (callable): Executed function
+
+    Returns:
+        tuple: (time_taken, result)
+    """
     start_time = time.time()
     result = call_algorithm()
     end_time = time.time()
@@ -26,12 +40,31 @@ def time_wrapper(call_algorithm):
     return time_taken, result
 
 def generate_string(base_string, indices):
+    """
+    Generate a DNA string using iterative self-insertion
+
+    Args:
+        base_string (str): Initial DNA sequence.
+        indices (list[int]): Positions used for expansion
+
+    Returns:
+        str: Fully expanded DNA sequence
+    """
     current_string = base_string
     for idx in indices:
         current_string = current_string[:idx+1] + current_string + current_string[idx+1:]
     return current_string
 
 def parse_input(input_file):
+    """
+    Parse the custom DNA input file and generate two expanded sequence
+
+    Args:
+        input_file (str): Path to input file
+
+    Returns:
+        tuple: (expanded_string_s, expanded_string_t)
+    """
     with open(input_file, 'r') as f:
         lines = [line.strip() for line in f.readlines() if line.strip()]
     
@@ -41,12 +74,12 @@ def parse_input(input_file):
             separator_idx = i
             break
     
-    # First string generation
+    # first string generation
     s0 = lines[0]
     s_indices = [int(lines[i]) for i in range(1, separator_idx)]
     s = generate_string(s0, s_indices)
     
-    # Second string generation
+    # second string generation
     t0 = lines[separator_idx]
     t_indices = [int(lines[i]) for i in range(separator_idx + 1, len(lines))]
     t = generate_string(t0, t_indices)
@@ -55,15 +88,21 @@ def parse_input(input_file):
 
 def basic_alignment(x, y):
     """
-    Basic dynamic programming solution for sequence alignment.
-    Implements the recurrence from notes:
-    OPT(i,j) = min {
-        OPT(i-1, j-1) + α_{x_i y_j},  
-        OPT(i-1, j) + δ,               #gap x
-        OPT(i, j-1) + δ                #gap y
-    }
-    Time: O(mn), Space: O(mn)
-    Returns: (cost, aligned_x, aligned_y)
+    Computes optimal global alignment of two sequences
+
+    Recurrence:
+        OPT(i, j) = min(
+            OPT(i-1, j-1) + alpha(x_i, y_j),
+            OPT(i-1, j) + delta,
+            OPT(i, j-1) + delta
+        )
+        
+    Args:
+        x (str): First DNA sequence
+        y (str): Second DNA sequence
+
+    Returns:
+        tuple: (cost, aligned_x, aligned_y)
     """
     m, n = len(x), len(y)
     
@@ -124,6 +163,13 @@ def basic_alignment(x, y):
     return cost, ''.join(aligned_x), ''.join(aligned_y)
 
 def main():
+    """
+    Program entry point
+    
+    Loads input file, calls alignment algorithm, and writes output to file
+
+    Exists if required arguments are missing
+    """
     if len(sys.argv) != 3:
         sys.exit(1)
     
